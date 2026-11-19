@@ -8,8 +8,8 @@ from fetch_data import (
 )
 
 
-def fuse_sources():
-    """Fetch all four sources and combine them into one table, one row per hour."""
+def get_raw_table():
+    """Fetch all four sources and join them as they are (no averaging, no filling)."""
     om_weather = fetch_openmeteo_weather()
     om_air = fetch_openmeteo_air_quality()
     ow_weather = fetch_openweather_weather()
@@ -24,6 +24,12 @@ def fuse_sources():
     # Keep only hours up to now.
     now = pd.Timestamp.now(tz=config.TIMEZONE).tz_localize(None).floor("h")
     table = table[table["time"] <= now].copy()
+    return table
+
+
+def fuse_sources(raw=None):
+    """Combine the raw table into one record per hour."""
+    table = get_raw_table() if raw is None else raw.copy()
 
     # Rule 1: average (mean() ignores a missing value)
     table["temperature"] = table[["temperature_2m", "ow_temperature"]].mean(axis=1)
